@@ -1,4 +1,3 @@
-// src/context/AuthContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from "react";
 import axios from "axios";
 
@@ -6,6 +5,11 @@ import axios from "axios";
 interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
+  register: (
+    email: string,
+    password: string,
+    userName: string
+  ) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -27,16 +31,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token")
   );
+
+  // Register user and store token in localStorage
   const register = async (
     email: string,
     password: string,
-    userName: string
+    username: string
   ) => {
     try {
-      const response = await axios.post("/register", {
+      const response = await axios.post("http://localhost:4000/register", {
         email,
         password,
-        userName,
+        username,
       });
       const token = response.data.token;
       setToken(token);
@@ -47,9 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Login user and store token in localStorage
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post("/login", { email, password });
+      const response = await axios.post("http://localhost:4000/login", {
+        email,
+        password,
+      });
       const token = response.data.token;
       setToken(token);
       localStorage.setItem("token", token);

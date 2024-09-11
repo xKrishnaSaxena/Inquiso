@@ -8,12 +8,12 @@ import { UserProvider } from "./context/UserContext";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Router>
-      <AuthProvider>
-        <UserProvider>
+    <AuthProvider>
+      <UserProvider>
+        <Router>
           <App />
-        </UserProvider>
-      </AuthProvider>
-    </Router>
+        </Router>
+      </UserProvider>
+    </AuthProvider>
   </React.StrictMode>
 );

@@ -1,4 +1,3 @@
-// src/context/UserContext.tsx
 import React, {
   createContext,
   useState,
@@ -12,6 +11,7 @@ import { useAuth } from "./AuthContext";
 // Define the shape of UserContext
 interface User {
   email: string;
+  username: string; // Ensure username is included
   role: "user" | "admin";
 }
 
@@ -39,7 +39,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserData = async () => {
     if (!token) return;
     try {
-      const response = await axios.get("/user-profile", {
+      const response = await axios.get("http://localhost:4000/user-profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(response.data);

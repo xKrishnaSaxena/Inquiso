@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import Login from "./components/Login";
 import ThemeToggle from "./components/ThemeToggle";
 import AdminPanel from "./components/AdminPanel";
 import UserPanel from "./components/UserPanel";
-import { ThemeProvider } from "./context/ThemeContext";
-import { Question } from "@/types";
-import { Route, Routes, useNavigate } from "react-router-dom";
 import UserLoginForm from "./components/UserLoginForm";
 import AdminLoginForm from "./components/AdminLoginForm";
+import UserRegisterForm from "./components/UserRegisterForm";
+import { ThemeProvider } from "./context/ThemeContext";
+import { Question } from "@/types";
+import { useAuth } from "./context/AuthContext";
+import { useUser } from "./context/UserContext";
 
 const socket: Socket = io("http://localhost:3000", {
   transports: ["websocket"],
 });
 
 const App: React.FC = () => {
+  const { user } = useUser();
+  const { token } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userType, setUserType] = useState<"user" | "admin" | null>(null);
-  const [userName, setUserName] = useState<string>("Krishna");
+  const [userName, setUserName] = useState<string>("");
   const navigate = useNavigate();
 
-  // Websocket functions
+  useEffect(() => {
+    if (user && token) {
+      setUserName(user.username);
+    }
+  }, [user, token]);
+
+  // WebSocket functions
   useEffect(() => {
     socket.on("load-questions", (questions: Question[]) => {
       setQuestions(questions);
@@ -62,7 +73,7 @@ const App: React.FC = () => {
       socket.off("question-removed");
       socket.off("all-questions-removed");
     };
-  }, []);
+  }, [socket]);
 
   const handleSubmitQuestion = (text: string) => {
     socket.emit("new-question", { text, userName });
@@ -79,31 +90,15 @@ const App: React.FC = () => {
   const handleRemoveAll = () => {
     socket.emit("remove-all");
   };
-  //User Defined Functions
-  const handleLogin = (type: "user" | "admin") => {
-    console.log("type ->", type);
-    setUserType(type);
-    if (type === "user") {
-      navigate("/user-login");
-    } else if (type === "admin") {
-      navigate("/admin-login");
-    }
-  };
-
-  if (!userType) {
-    return (
-      <ThemeProvider>
-        <ThemeToggle />
-        <Login onLogin={handleLogin} />
-      </ThemeProvider>
-    );
-  }
 
   return (
     <ThemeProvider>
       <ThemeToggle />
       <Routes>
-        <Route path="/" element={<Login onLogin={handleLogin} />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/user-login" element={<UserLoginForm />} />
+        <Route path="/user-register" element={<UserRegisterForm />} />
+        <Route path="/admin-login" element={<AdminLoginForm />} />
         <Route
           path="/user-live"
           element={
@@ -125,9 +120,6 @@ const App: React.FC = () => {
             />
           }
         />
-
-        <Route path="/user-login" element={<UserLoginForm />} />
-        <Route path="/admin-login" element={<AdminLoginForm />} />
       </Routes>
     </ThemeProvider>
   );

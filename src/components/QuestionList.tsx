@@ -24,11 +24,11 @@ const QuestionList: React.FC<QuestionListProps> = ({
         >
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-bold text-lg text-black dark:text-white">
-                {question.userName}
+              <p className="font-bold text-lg text-black dark:text-white  ">
+                {question.text}
               </p>
               <p className="mt-1 text-gray-700 dark:text-gray-300">
-                {question.text}
+                {question.userName}
               </p>
             </div>
             <div className="flex space-x-2 items-center">

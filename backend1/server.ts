@@ -4,14 +4,11 @@ import mongoose, { Document, Schema } from "mongoose";
 import http from "http";
 import dotenv from "dotenv";
 import cors from "cors";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -24,7 +21,6 @@ const io = new Server(server, {
 });
 
 const mongoUri = process.env.MONGODB_URI;
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 if (!mongoUri) {
   throw new Error("MONGODB_URI is not defined in the environment variables");
@@ -44,13 +40,7 @@ interface IQuestion extends Document {
   userName: string;
   votes: number;
   upvotedBy: string[];
-}
-
-interface IUser extends Document {
-  userName: string;
-  email: string;
-  password: string;
-  role: "user" | "admin";
+  created_at: Date;
 }
 
 const questionSchema = new Schema<IQuestion>({
@@ -58,96 +48,13 @@ const questionSchema = new Schema<IQuestion>({
   userName: { type: String, required: true },
   votes: { type: Number, default: 0 },
   upvotedBy: [String],
+  created_at: { type: Date, default: Date.now },
 });
 
 const Question = mongoose.model<IQuestion>("Question", questionSchema);
 
-const userSchema = new Schema<IUser>({
-  userName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ["user", "admin"], default: "user" },
-});
-
-userSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-  }
-  next();
-});
-
-const User = mongoose.model<IUser>("User", userSchema);
-
-app.post("/register", async (req: Request, res: Response) => {
-  const { email, password, role, userName } = req.body;
-
-  try {
-    const user = new User({ email, password, role, userName });
-    await user.save();
-    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    res.status(200).json({ token, message: "Registration successful" });
-  } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ message: "Error registering user" });
-  }
-});
-
-app.post("/login", async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    res.status(200).json({ token });
-  } catch (error) {
-    console.error("Error logging in user:", error);
-    res.status(500).json({ message: "Error logging in user" });
-  }
-});
-
-const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.header("Authorization")?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as {
-      userId: string;
-      role: string;
-    };
-    (req as any).user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: "Invalid token" });
-  }
-};
-
-app.get("/protected", authMiddleware, (req: Request, res: Response) => {
-  const user = (req as any).user;
-  res.status(200).json({ message: "Access granted", user });
-});
-
 io.on("connection", async (socket) => {
   console.log("A user connected");
-
   try {
     const questions = await Question.find({}).sort({ votes: -1 });
     socket.emit("load-questions", questions);
@@ -164,9 +71,11 @@ io.on("connection", async (socket) => {
       });
       await question.save();
       io.emit("question-posted", question);
-      const questions = await Question.find({}).sort("votes");
-      console.log(questions);
-      socket.emit("load-questions", questions);
+      const questions = await Question.find({}).sort({
+        votes: -1,
+        created_at: -1,
+      });
+      io.emit("load-questions", questions);
     }
   );
 
@@ -182,9 +91,8 @@ io.on("connection", async (socket) => {
         question.upvotedBy.push(userName);
         await question.save();
         io.emit("question-updated", question);
-        const questions = await Question.find({}).sort("votes");
-        console.log(questions);
-        socket.emit("load-questions", questions);
+        const questions = await Question.find({}).sort({ votes: -1 });
+        io.emit("load-questions", questions);
       }
     }
   });

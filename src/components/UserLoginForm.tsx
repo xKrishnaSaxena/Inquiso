@@ -8,14 +8,19 @@ import { useAuth } from "@/context/AuthContext";
 const UserLoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userName, setUserName] = useState("");
 
+  const { login } = useAuth(); // Add login from AuthContext
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    navigate("/user-live");
+    try {
+      await login(email, password); // Call login function to authenticate
+      navigate("/user-live"); // Redirect to live Q&A on successful login
+    } catch (error) {
+      console.error("Login failed", error);
+    }
   };
 
   return (
@@ -24,13 +29,6 @@ const UserLoginForm: React.FC = () => {
         User Login
       </h1>
       <form className="flex flex-col space-y-4 w-80" onSubmit={handleLogin}>
-        <Input
-          placeholder="Username"
-          value={userName}
-          required
-          onChange={(e) => setUserName(e.target.value)}
-          className="px-4 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg"
-        />
         <Input
           placeholder="Email"
           type="email"

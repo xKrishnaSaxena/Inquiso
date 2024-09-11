@@ -1,19 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
-import { Input } from "./components/ui/input";
-
-interface Question {
-  _id: string;
-  text: string;
-  userName: string;
-  votes: number;
-}
-
-interface AdminAction {
-  action: "answered" | "remove";
-  questionId: string;
-}
+import Login from "./components/Login";
+import ThemeToggle from "./components/ThemeToggle";
+import AdminPanel from "./components/AdminPanel";
+import UserPanel from "./components/UserPanel";
+import { ThemeProvider } from "./context/ThemeContext";
+import { Question } from "@/types";
+import { Route, Routes, useNavigate } from "react-router-dom";
+import UserLoginForm from "./components/UserLoginForm";
+import AdminLoginForm from "./components/AdminLoginForm";
 
 const socket: Socket = io("http://localhost:3000", {
   transports: ["websocket"],
@@ -21,10 +16,11 @@ const socket: Socket = io("http://localhost:3000", {
 
 const App: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [questionText, setQuestionText] = useState<string>("");
-  const [userName, setUserName] = useState<string>("");
-  const questionInputRef = useRef<HTMLInputElement | null>(null);
+  const [userType, setUserType] = useState<"user" | "admin" | null>(null);
+  const [userName, setUserName] = useState<string>("Krishna");
+  const navigate = useNavigate();
 
+  // Websocket functions
   useEffect(() => {
     socket.on("load-questions", (questions: Question[]) => {
       setQuestions(questions);
@@ -68,79 +64,72 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleSubmit = () => {
-    if (questionText.trim() && userName.trim()) {
-      socket.emit("new-question", { text: questionText, userName });
-      setQuestionText("");
-      questionInputRef.current?.focus();
-    }
+  const handleSubmitQuestion = (text: string) => {
+    socket.emit("new-question", { text, userName });
   };
 
-  const handleUpvote = (id: string, userName: string) => {
+  const handleUpvote = (id: string) => {
     socket.emit("upvote-question", id, userName);
   };
 
-  const handleAdminAction = (id: string, action: AdminAction["action"]) => {
+  const handleAdminAction = (id: string, action: "answered" | "remove") => {
     socket.emit("admin-action", { action, questionId: id });
   };
 
   const handleRemoveAll = () => {
     socket.emit("remove-all");
   };
+  //User Defined Functions
+  const handleLogin = (type: "user" | "admin") => {
+    console.log("type ->", type);
+    setUserType(type);
+    if (type === "user") {
+      navigate("/user-login");
+    } else if (type === "admin") {
+      navigate("/admin-login");
+    }
+  };
+
+  if (!userType) {
+    return (
+      <ThemeProvider>
+        <ThemeToggle />
+        <Login onLogin={handleLogin} />
+      </ThemeProvider>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold mb-4">Realtime Q&A App</h1>
-        <div className="mb-6">
-          <Input
-            ref={questionInputRef}
-            placeholder="Enter your name"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            className="mb-2"
-          />
-          <Input
-            placeholder="Ask your question"
-            value={questionText}
-            onChange={(e) => setQuestionText(e.target.value)}
-            className="mb-2"
-          />
-          <Button onClick={handleSubmit}>Post Question</Button>
-        </div>
-        <div className="space-y-4">
-          {questions.map((question) => (
-            <div key={question._id} className="p-4 bg-white rounded shadow">
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-semibold">{question.userName}</p>
-                  <p>{question.text}</p>
-                </div>
-                <div className="flex items-center">
-                  <Button
-                    onClick={() => handleUpvote(question._id, userName)}
-                    className="mr-2"
-                  >
-                    Upvote ({question.votes})
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleAdminAction(question._id, "answered")}
-                  >
-                    Mark as Answered
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-6">
-          <Button variant="destructive" onClick={handleRemoveAll}>
-            Remove All Questions (Admin)
-          </Button>
-        </div>
-      </div>
-    </div>
+    <ThemeProvider>
+      <ThemeToggle />
+      <Routes>
+        <Route path="/" element={<Login onLogin={handleLogin} />} />
+        <Route
+          path="/user-live"
+          element={
+            <UserPanel
+              userName={userName}
+              questions={questions}
+              onSubmitQuestion={handleSubmitQuestion}
+              onUpvote={handleUpvote}
+            />
+          }
+        />
+        <Route
+          path="/admin-live"
+          element={
+            <AdminPanel
+              questions={questions}
+              onAdminAction={handleAdminAction}
+              onRemoveAll={handleRemoveAll}
+            />
+          }
+        />
+
+        <Route path="/user-login" element={<UserLoginForm />} />
+        <Route path="/admin-login" element={<AdminLoginForm />} />
+      </Routes>
+    </ThemeProvider>
   );
 };
 

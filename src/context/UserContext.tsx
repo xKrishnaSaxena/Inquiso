@@ -7,13 +7,7 @@ import React, {
 } from "react";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
-
-// Define the shape of UserContext
-interface User {
-  email: string;
-  username: string; // Ensure username is included
-  role: "user" | "admin";
-}
+import { User } from "@/types";
 
 interface UserContextType {
   user: User | null;
@@ -22,7 +16,6 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Custom hook to use UserContext
 export const useUser = () => {
   const context = useContext(UserContext);
   if (!context) {
@@ -31,7 +24,6 @@ export const useUser = () => {
   return context;
 };
 
-// UserProvider component to fetch and store user details
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { token } = useAuth();
   const [user, setUser] = useState<User | null>(null);
@@ -39,10 +31,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserData = async () => {
     if (!token) return;
     try {
-      const response = await axios.get("http://localhost:4000/user-profile", {
+      const response = await axios.get("http://localhost:3000/user-profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(response.data);
+      localStorage.setItem("userId", response.data.id);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }

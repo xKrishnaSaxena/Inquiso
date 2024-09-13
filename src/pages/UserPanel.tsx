@@ -1,6 +1,6 @@
 import React from "react";
-import QuestionForm from "./QuestionForm";
-import QuestionList from "./QuestionList";
+import QuestionForm from "../components/QuestionForm";
+import QuestionList from "../components/QuestionList";
 import { Question } from "@/types";
 
 interface UserPanelProps {

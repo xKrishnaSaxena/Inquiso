@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
 import axios from "axios";
 
-// Define the shape of our AuthContext
 interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
@@ -14,10 +13,8 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// Create context with default values
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Custom hook to use AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -26,20 +23,18 @@ export const useAuth = () => {
   return context;
 };
 
-// AuthProvider component to wrap around parts of the app that need authentication
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token")
   );
 
-  // Register user and store token in localStorage
   const register = async (
     email: string,
     password: string,
     username: string
   ) => {
     try {
-      const response = await axios.post("http://localhost:4000/register", {
+      const response = await axios.post("http://localhost:3000/register", {
         email,
         password,
         username,
@@ -53,10 +48,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Login user and store token in localStorage
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post("http://localhost:4000/login", {
+      const response = await axios.post("http://localhost:3000/login", {
         email,
         password,
       });

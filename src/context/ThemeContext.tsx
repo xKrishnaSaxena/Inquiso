@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { ThemeContextType } from "@/types"; // Assuming you have types defined somewhere
+import { ThemeContextType } from "@/types";
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -8,7 +8,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [darkMode, setDarkMode] = useState(false);
 
-  // Detect system preference for dark mode on first load
   useEffect(() => {
     const userPrefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"

@@ -1,13 +1,17 @@
 import express, { Request, Response, NextFunction } from "express";
 import { Server } from "socket.io";
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import http from "http";
 import dotenv from "dotenv";
 import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { IQuestion, IRoom, IUser } from "./types";
+import Room from "./models/Room";
+import Question from "./models/Question";
+import User from "./models/User";
+import { Post } from "./models/Post";
+import { IComment } from "./types";
 
 dotenv.config();
 
@@ -41,41 +45,6 @@ mongoose
   .catch((error) => {
     console.error("Error connecting to MongoDB:", error);
   });
-
-//SCHEMAS
-const questionSchema = new Schema<IQuestion>({
-  text: { type: String, required: true },
-  userName: { type: String, required: true },
-  votes: { type: Number, default: 0 },
-  upvotedBy: [String],
-  created_at: { type: Date, default: Date.now },
-  roomId: { type: String, required: true },
-});
-
-const roomSchema = new Schema<IRoom>({
-  roomId: { type: String, required: true },
-  password: { type: String, required: true },
-  admin: { type: Schema.Types.ObjectId, ref: "User", required: true },
-});
-
-const userSchema = new Schema<IUser>({
-  username: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
-
-userSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-  }
-  next();
-});
-
-//MODELS
-const Room = mongoose.model<IRoom>("Room", roomSchema);
-const Question = mongoose.model<IQuestion>("Question", questionSchema);
-const User = mongoose.model<IUser>("User", userSchema);
 
 //SOCKET FUNCTIONS
 io.on("connection", async (socket) => {
@@ -314,6 +283,193 @@ app.get(
   }
 );
 
+//Post Routes
+app.post("/posts", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { content, title, file } = req.body;
+    const userId = (req as any).user.userId;
+    const newPost = new Post({
+      user: userId,
+      content,
+      title,
+      file,
+    });
+
+    await newPost.save();
+    res.status(201).json(newPost);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create post" });
+  }
+});
+app.delete(
+  "/posts/:id",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const post = await Post.findById(req.params.id);
+      if (!post) return res.status(404).json({ error: "Post not found" });
+
+      if (post.user.toString() !== (req as any).user.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      await post.deleteOne();
+      res.status(200).json({ message: "Post deleted" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete post" });
+    }
+  }
+);
+app.put(
+  "/posts/:id/upvote",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const post = await Post.findById(req.params.id);
+      if (!post) return res.status(404).json({ error: "Post not found" });
+
+      if (post.upvotedBy.includes((req as any).user.userId)) {
+        return res.status(400).json({ error: "Already upvoted" });
+      }
+
+      post.votes += 1;
+      post.upvotedBy.push((req as any).user.userId);
+      await post.save();
+
+      res.status(200).json(post);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to upvote post" });
+    }
+  }
+);
+app.post(
+  "/posts/:id/comments",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const { description, file } = req.body;
+      const post = await Post.findById(req.params.id);
+
+      if (!post) return res.status(404).json({ error: "Post not found" });
+
+      const newComment: Partial<IComment> = {
+        user: (req as any).user.userId,
+        description,
+        file,
+        votes: 0,
+        upvotedBy: [],
+        createdAt: new Date(),
+        reply: [],
+      };
+
+      post.comments.push(newComment as IComment);
+
+      await post.save();
+
+      res.status(201).json(post);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add comment" });
+    }
+  }
+);
+
+app.delete(
+  "/posts/:postId/comments/:commentId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const post = await Post.findById(req.params.postId);
+      if (!post) return res.status(404).json({ error: "Post not found" });
+
+      const comments = post.comments as Types.DocumentArray<any>;
+      const commentId = new mongoose.Types.ObjectId(req.params.commentId);
+      const commentIndex = comments.findIndex((comment) =>
+        comment._id.equals(commentId)
+      );
+
+      if (commentIndex === -1)
+        return res.status(404).json({ error: "Comment not found" });
+
+      // Check if the user is authorized to delete the comment
+      if (comments[commentIndex].user.toString() !== (req as any).user.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      comments.splice(commentIndex, 1);
+      await post.save();
+
+      res.status(200).json(post);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  }
+);
+app.put(
+  "/posts/:postId/comments/:commentId/upvote",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const post = await Post.findById(req.params.postId);
+      if (!post) return res.status(404).json({ error: "Post not found" });
+      const comments = post.comments as Types.DocumentArray<any>;
+      console.log(comments);
+      const commentId = new mongoose.Types.ObjectId(req.params.commentId);
+      console.log(commentId);
+      const comment = comments.id(commentId);
+      if (!comment) return res.status(404).json({ error: "Comment not found" });
+
+      if (comment.upvotedBy.includes((req as any).user.userId)) {
+        return res.status(400).json({ error: "Already upvoted" });
+      }
+
+      comment.votes += 1;
+      comment.upvotedBy.push((req as any).user.userId);
+
+      await post.save();
+
+      res.status(200).json(post);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to upvote comment" });
+    }
+  }
+);
+// Reply to a comment
+app.post(
+  "/posts/:postId/comments/:commentId/reply",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const { description, file } = req.body;
+      const post = await Post.findById(req.params.postId);
+      if (!post) return res.status(404).json({ error: "Post not found" });
+      const comments = post.comments as Types.DocumentArray<any>;
+
+      const commentId = new mongoose.Types.ObjectId(req.params.commentId);
+      const comment = comments.id(commentId);
+      console.log(comment);
+      if (!comment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      const newReply: Partial<IComment> = {
+        user: (req as any).user.userId,
+        description,
+        file,
+        votes: 0,
+        upvotedBy: [],
+        reply: [],
+        createdAt: new Date(),
+      };
+
+      comment.reply.push(newReply);
+      await post.save();
+
+      res.status(201).json({ message: "Reply added successfully", comment });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to add reply" });
+    }
+  }
+);
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

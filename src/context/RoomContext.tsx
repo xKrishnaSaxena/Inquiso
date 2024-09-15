@@ -2,7 +2,6 @@ import axios from "axios";
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "./UserContext";
 
 interface RoomContextType {
   roomId: string | null;
@@ -22,8 +21,6 @@ const RoomContext = createContext<RoomContextType | undefined>(undefined);
 export const RoomProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const { user } = useUser();
-
   const [roomId, setRoomId] = useState<string | null>(
     localStorage.getItem("roomId")
   );

@@ -32,7 +32,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "https://inquiso.onrender.com",
     methods: ["GET", "POST"],
   },
 });
@@ -299,6 +299,17 @@ app.post("/posts", authMiddleware, async (req: Request, res: Response) => {
     res.status(201).json(newPost);
   } catch (error) {
     res.status(500).json({ error: "Failed to create post" });
+  }
+});
+app.get("/posts", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const posts = await Post.find()
+      .populate("user", "username")
+      .populate("comments")
+      .sort({ createdAt: -1 });
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
 app.delete(

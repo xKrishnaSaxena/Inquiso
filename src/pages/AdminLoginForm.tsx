@@ -16,10 +16,13 @@ const AdminLoginForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:3000/loginAdmin", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "https://inquiso-backend.onrender.com/loginAdmin",
+        {
+          email,
+          password,
+        }
+      );
 
       const { token } = response.data;
 

@@ -34,11 +34,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     username: string
   ) => {
     try {
-      const response = await axios.post("http://localhost:3000/register", {
-        email,
-        password,
-        username,
-      });
+      const response = await axios.post(
+        "https://inquiso-backend.onrender.com/register",
+        {
+          email,
+          password,
+          username,
+        }
+      );
       const token = response.data.token;
       setToken(token);
       localStorage.setItem("token", token);
@@ -50,10 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post("http://localhost:3000/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "https://inquiso-backend.onrender.com/login",
+        {
+          email,
+          password,
+        }
+      );
       const token = response.data.token;
       setToken(token);
       localStorage.setItem("token", token);

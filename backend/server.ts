@@ -32,7 +32,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://inquiso.onrender.com",
+    origin: "https://localhost:5173",
     methods: ["GET", "POST"],
   },
 });
@@ -286,12 +286,13 @@ app.get(
 //Post Routes
 app.post("/posts", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { content, title, file } = req.body;
+    const { content, title, file, section } = req.body;
     const userId = (req as any).user.userId;
     const newPost = new Post({
       user: userId,
       content,
       title,
+      section,
       file,
     });
 
@@ -301,7 +302,7 @@ app.post("/posts", authMiddleware, async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to create post" });
   }
 });
-app.get("/posts", authMiddleware, async (req: Request, res: Response) => {
+app.get("/posts", async (req: Request, res: Response) => {
   try {
     const posts = await Post.find()
       .populate("user", "username")

@@ -1,3 +1,9 @@
+enum Section {
+  Web3 = "web3",
+  Dev = "dev",
+  DevOps = "devops",
+}
+
 export interface IQuestion extends Document {
   text: string;
   userName: string;
@@ -31,6 +37,7 @@ export interface IPost extends Document {
   content: string;
   title: string;
   createdAt: Date;
+  section: Section;
   votes: number;
   upvotedBy: string[];
   comments: IComment[];

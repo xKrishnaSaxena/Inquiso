@@ -15,6 +15,9 @@ import RoomCreation from "./pages/RoomCreation";
 import JoinRoom from "./pages/JoinRoom";
 import Dashboard from "./pages/Dashboard";
 import { useRoom } from "./context/RoomContext";
+import Sidebar from "./components/Sidebar";
+import { PostList } from "./pages/PostList";
+import PostManager from "./pages/PostManager";
 
 const token = localStorage.getItem("token");
 const socket: Socket = io("https://inquiso-backend.onrender.com", {
@@ -131,37 +134,47 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <ThemeToggle />
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard username={userName} />} />
-        <Route path="/user-login" element={<UserLoginForm />} />
-        <Route path="/user-register" element={<UserRegisterForm />} />
-        <Route path="/admin-login" element={<AdminLoginForm />} />
-        <Route path="/room-create" element={<RoomCreation />} />
-        <Route path="/join-room" element={<JoinRoom />} />
-        <Route
-          path="/user/:roomId"
-          element={
-            <UserPanel
-              userName={userName}
-              questions={questions}
-              onSubmitQuestion={handleSubmitQuestion}
-              onUpvote={handleUpvote}
+      <div className="flex h-screen">
+        <Sidebar />
+
+        <div className="flex-1 ">
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route
+              path="/dashboard"
+              element={<Dashboard username={userName} />}
             />
-          }
-        />
-        <Route
-          path="/admin/:roomId"
-          element={
-            <AdminPanel
-              questions={questions}
-              onAdminAction={handleAdminAction}
-              onRemoveAll={handleRemoveAll}
-              onCloseRoom={handleCloseRoom}
+            <Route path="/posts" element={<PostManager />} />{" "}
+            <Route path="/user-login" element={<UserLoginForm />} />
+            <Route path="/user-register" element={<UserRegisterForm />} />
+            <Route path="/admin-login" element={<AdminLoginForm />} />
+            <Route path="/room-create" element={<RoomCreation />} />
+            <Route path="/join-room" element={<JoinRoom />} />
+            <Route
+              path="/user/:roomId"
+              element={
+                <UserPanel
+                  userName={userName}
+                  questions={questions}
+                  onSubmitQuestion={handleSubmitQuestion}
+                  onUpvote={handleUpvote}
+                />
+              }
             />
-          }
-        />
-      </Routes>
+            <Route
+              path="/admin/:roomId"
+              element={
+                <AdminPanel
+                  questions={questions}
+                  onAdminAction={handleAdminAction}
+                  onRemoveAll={handleRemoveAll}
+                  onCloseRoom={handleCloseRoom}
+                />
+              }
+            />
+          </Routes>
+        </div>
+      </div>
     </ThemeProvider>
   );
 };

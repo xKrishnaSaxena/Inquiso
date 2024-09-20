@@ -1,8 +1,16 @@
-import React from "react";
+import { useUser } from "@/context/UserContext";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-all duration-300">
@@ -22,12 +30,6 @@ const Login: React.FC = () => {
         >
           Login as User
         </button>
-        {/* <button
-          onClick={() => navigate("/admin-login")}
-          className="px-6 py-3 rounded-md bg-gray-800 text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 shadow transition-all duration-300"
-        >
-          Login as Admin
-        </button> */}
       </div>
     </div>
   );

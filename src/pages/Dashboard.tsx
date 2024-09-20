@@ -1,19 +1,29 @@
-import React from "react";
+import { useUser } from "@/context/UserContext";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-interface DashboardProps {
-  username: string;
-}
-const Dashboard: React.FC<DashboardProps> = ({ username }) => {
-  const navigate = useNavigate();
 
-  if (!username) {
-    return;
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useUser();
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-all duration-300">
+        <h1 className="text-4xl font-bold mb-8 text-gray-800 dark:text-gray-100">
+          Please Login to Create/Join Rooms!
+        </h1>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-all duration-300">
       <h1 className="text-4xl font-bold mb-8 text-gray-800 dark:text-gray-100">
-        Hello , {username}
+        Hello , {user.username}
       </h1>
       <div className="flex flex-wrap justify-center gap-4">
         <button

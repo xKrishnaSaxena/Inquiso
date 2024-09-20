@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
-import ThemeToggle from "./components/ThemeToggle";
 import AdminPanel from "./pages/AdminPanel";
 import UserPanel from "./pages/UserPanel";
 import UserLoginForm from "./pages/UserLoginForm";
@@ -16,7 +15,8 @@ import JoinRoom from "./pages/JoinRoom";
 import Dashboard from "./pages/Dashboard";
 import { useRoom } from "./context/RoomContext";
 import Sidebar from "./components/Sidebar";
-import PostManager from "./pages/PostManager";
+
+import PostPage from "./pages/PostPage";
 
 const token = localStorage.getItem("token");
 const socket: Socket = io("https://inquiso-backend.onrender.com", {
@@ -68,6 +68,10 @@ const App: React.FC = () => {
       socket.on("all-questions-removed", () => {
         setQuestions([]);
       });
+      socket.on("room-closed", () => {
+        alert("The room has been closed.");
+        navigate("/dashboard");
+      });
       return () => {
         socket.off("load-questions");
         socket.off("question-posted");
@@ -75,6 +79,7 @@ const App: React.FC = () => {
         socket.off("question-answered");
         socket.off("question-removed");
         socket.off("all-questions-removed");
+        socket.off("room-closed");
       };
     }
   }, [roomId]);
@@ -118,6 +123,7 @@ const App: React.FC = () => {
         }
       );
       if (response.ok) {
+        socket.emit("close-room", roomId);
         alert("Room closed successfully.");
         navigate("/dashboard");
       } else {
@@ -132,18 +138,14 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <ThemeToggle />
       <div className="flex h-screen">
         <Sidebar />
 
         <div className="flex-1 ">
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route
-              path="/dashboard"
-              element={<Dashboard username={userName} />}
-            />
-            <Route path="/posts" element={<PostManager />} />{" "}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/posts" element={<PostPage />} />{" "}
             <Route path="/user-login" element={<UserLoginForm />} />
             <Route path="/user-register" element={<UserRegisterForm />} />
             <Route path="/admin-login" element={<AdminLoginForm />} />

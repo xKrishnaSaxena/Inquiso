@@ -130,6 +130,19 @@ io.on("connection", async (socket) => {
     await Question.deleteMany({});
     io.emit("all-questions-removed");
   });
+  socket.on("close-room", async (roomId: string) => {
+    const room = await Room.findOne({ roomId });
+    if (!room) {
+      socket.emit("error", { message: "Room not found or has been deleted" });
+      return;
+    }
+
+    io.to(roomId).emit("room-closed");
+
+    await Room.findOneAndDelete({ roomId });
+
+    socket.leave(roomId);
+  });
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });

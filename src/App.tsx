@@ -16,7 +16,6 @@ import JoinRoom from "./pages/JoinRoom";
 import Dashboard from "./pages/Dashboard";
 import { useRoom } from "./context/RoomContext";
 import Sidebar from "./components/Sidebar";
-import { PostList } from "./pages/PostList";
 import PostManager from "./pages/PostManager";
 
 const token = localStorage.getItem("token");

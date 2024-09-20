@@ -7,12 +7,12 @@ import {
   DialogHeader,
 } from "@/components/ui/dialog";
 import { toast } from "react-toastify";
-import { useTheme } from "next-themes";
-import { ArrowUpIcon, ShareIcon } from "@heroicons/react/24/outline";
-import { AnimatedList } from "@/components/magicui/animated-list";
+// import { useTheme } from "next-themes";
+import { ArrowUpIcon } from "@heroicons/react/24/outline";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+
 import { PostList } from "./PostList";
 
 interface Post {
@@ -32,13 +32,14 @@ interface Comment {
 
 const PostManager = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  console.log(posts);
   const [newPost, setNewPost] = useState({
     title: "",
     content: "",
     section: "",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
+  // const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     fetchPosts();
@@ -65,36 +66,36 @@ const PostManager = () => {
     }
   };
 
-  const handlePostDelete = async (postId: string) => {
-    try {
-      await axios.delete(`/posts/${postId}`);
-      toast.success("Post deleted successfully!");
-      fetchPosts();
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      toast.error("Failed to delete post.");
-    }
-  };
+  // const handlePostDelete = async (postId: string) => {
+  //   try {
+  //     await axios.delete(`/posts/${postId}`);
+  //     toast.success("Post deleted successfully!");
+  //     fetchPosts();
+  //   } catch (error) {
+  //     console.error("Error deleting post:", error);
+  //     toast.error("Failed to delete post.");
+  //   }
+  // };
 
-  const handleUpvotePost = async (postId: string) => {
-    try {
-      await axios.put(`/posts/${postId}/upvote`);
-      fetchPosts();
-    } catch (error) {
-      console.error("Error upvoting post:", error);
-      toast.error("Failed to upvote post.");
-    }
-  };
+  // const handleUpvotePost = async (postId: string) => {
+  //   try {
+  //     await axios.put(`/posts/${postId}/upvote`);
+  //     fetchPosts();
+  //   } catch (error) {
+  //     console.error("Error upvoting post:", error);
+  //     toast.error("Failed to upvote post.");
+  //   }
+  // };
 
-  const handleSharePost = (postId: string) => {
-    const postUrl = `${window.location.origin}/posts/${postId}`;
-    navigator.clipboard.writeText(postUrl);
-    toast.success("Post URL copied to clipboard!");
-  };
+  // const handleSharePost = (postId: string) => {
+  //   const postUrl = `${window.location.origin}/posts/${postId}`;
+  //   navigator.clipboard.writeText(postUrl);
+  //   toast.success("Post URL copied to clipboard!");
+  // };
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
+  // const toggleTheme = () => {
+  //   setTheme(theme === "light" ? "dark" : "light");
+  // };
 
   return (
     <div className="container mx-auto p-4">

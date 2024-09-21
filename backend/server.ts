@@ -299,14 +299,13 @@ app.get(
 //Post Routes
 app.post("/posts", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { content, title, file, section } = req.body;
+    const { content, title, section } = req.body;
     const userId = (req as any).user.userId;
     const newPost = new Post({
       user: userId,
       content,
       title,
       section,
-      file,
     });
 
     await newPost.save();
@@ -315,9 +314,10 @@ app.post("/posts", authMiddleware, async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to create post" });
   }
 });
-app.get("/posts", async (req: Request, res: Response) => {
+app.get("/posts/:section", async (req: Request, res: Response) => {
   try {
-    const posts = await Post.find()
+    const sectionParam = req.params.section;
+    const posts = await Post.find({ section: sectionParam })
       .populate("user", "username")
       .populate("comments")
       .sort({ createdAt: -1 });
@@ -380,7 +380,6 @@ app.post(
       const newComment: Partial<IComment> = {
         user: (req as any).user.userId,
         description,
-        file,
         votes: 0,
         upvotedBy: [],
         createdAt: new Date(),
@@ -478,7 +477,6 @@ app.post(
       const newReply: Partial<IComment> = {
         user: (req as any).user.userId,
         description,
-        file,
         votes: 0,
         upvotedBy: [],
         reply: [],

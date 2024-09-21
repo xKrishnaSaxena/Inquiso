@@ -6,16 +6,19 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { UserProvider } from "./context/UserContext";
 import { RoomProvider } from "./context/RoomContext";
+import { PostProvider } from "./context/PostContext";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AuthProvider>
       <UserProvider>
-        <Router>
-          <RoomProvider>
-            <App />
-          </RoomProvider>
-        </Router>
+        <PostProvider>
+          <Router>
+            <RoomProvider>
+              <App />
+            </RoomProvider>
+          </Router>
+        </PostProvider>
       </UserProvider>
     </AuthProvider>
   </React.StrictMode>

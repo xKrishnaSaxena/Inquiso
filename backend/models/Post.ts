@@ -13,7 +13,6 @@ const CommentSchema: Schema<IComment> = new Schema({
   upvotedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
   createdAt: { type: Date, default: Date.now },
   reply: [{ type: Schema.Types.Mixed }],
-  file: { type: String },
 });
 
 const PostSchema: Schema<IPost> = new Schema({
@@ -25,7 +24,6 @@ const PostSchema: Schema<IPost> = new Schema({
   section: { type: String, enum: Object.values(Section), required: true },
   upvotedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
   comments: [{ type: CommentSchema }],
-  file: { type: String },
 });
 
 export const Post = mongoose.model<IPost>("Post", PostSchema);

@@ -30,7 +30,6 @@ export interface IComment extends Document {
   upvotedBy: string[];
   createdAt: Date;
   reply: IComment[];
-  file?: string;
 }
 export interface IPost extends Document {
   user: mongoose.Schema.Types.ObjectId;
@@ -41,5 +40,4 @@ export interface IPost extends Document {
   votes: number;
   upvotedBy: string[];
   comments: IComment[];
-  file: string;
 }

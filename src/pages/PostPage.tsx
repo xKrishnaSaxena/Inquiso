@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,93 +25,26 @@ import {
   TrashIcon,
   PlusIcon,
 } from "lucide-react";
+import { IComment, IPost } from "@/types";
+import { usePost } from "../context/PostContext";
+import { useUser } from "../context/UserContext";
 
-const sections = ["Web3", "WebDev", "DevOps"];
-
-interface Comment {
-  id: string;
-  content: string;
-  author: string;
-  votes: number;
-  replies: Comment[];
-}
-
-interface Post {
-  id: string;
-  title: string;
-  content: string;
-  votes: number;
-  comments: Comment[];
-  section: string;
-}
-
-const dummyPosts: Post[] = [
-  {
-    id: "1",
-    title: "Understanding Blockchain",
-    content: "Blockchain is a decentralized...",
-    votes: 10,
-    comments: [
-      {
-        id: "c1",
-        content: "Great explanation!",
-        author: "user1",
-        votes: 5,
-        replies: [
-          {
-            id: "c1r1",
-            content: "Thanks! Glad you found it helpful.",
-            author: "OP",
-            votes: 2,
-            replies: [],
-          },
-        ],
-      },
-      {
-        id: "c2",
-        content: "Could you elaborate on smart contracts?",
-        author: "user2",
-        votes: 3,
-        replies: [],
-      },
-    ],
-    section: "Web3",
-  },
-  {
-    id: "2",
-    title: "React Hooks Explained",
-    content: "Hooks are a new addition in React...",
-    votes: 15,
-    comments: [
-      {
-        id: "c3",
-        content: "useState is my favorite!",
-        author: "user3",
-        votes: 7,
-        replies: [],
-      },
-    ],
-    section: "WebDev",
-  },
-  {
-    id: "3",
-    title: "Kubernetes Best Practices",
-    content: "When working with Kubernetes...",
-    votes: 12,
-    comments: [],
-    section: "DevOps",
-  },
-];
+const sections = ["web", "dev", "devops"];
 
 export default function PostPage() {
-  const [posts, setPosts] = useState(dummyPosts);
+  const { posts, fetchPosts, createPost, deletePost } = usePost();
+  const [selectedSection, setSelectedSection] = useState("Web3");
 
-  const handleCreatePost = (newPost: Post) => {
-    setPosts([newPost, ...posts]);
+  useEffect(() => {
+    fetchPosts(selectedSection);
+  }, [selectedSection]);
+
+  const handleCreatePost = async (newPost: IPost) => {
+    await createPost(newPost.content, newPost.title, newPost.section);
   };
 
-  const handleDeletePost = (postId: string) => {
-    setPosts(posts.filter((post) => post.id !== postId));
+  const handleDeletePost = async (postId: string) => {
+    await deletePost(postId);
   };
 
   return (
@@ -120,7 +53,11 @@ export default function PostPage() {
         <h1 className="text-3xl font-bold">Posts</h1>
         <CreatePostDialog onCreatePost={handleCreatePost} />
       </div>
-      <Tabs defaultValue="Web3" className="w-full">
+      <Tabs
+        defaultValue="Web3"
+        className="w-full"
+        onValueChange={setSelectedSection}
+      >
         <TabsList className="grid w-full grid-cols-3">
           {sections.map((section) => (
             <TabsTrigger key={section} value={section}>
@@ -135,7 +72,7 @@ export default function PostPage() {
                 .filter((post) => post.section === section)
                 .map((post) => (
                   <PostCard
-                    key={post.id}
+                    key={post._id}
                     post={post}
                     onDelete={handleDeletePost}
                   />
@@ -152,30 +89,34 @@ function PostCard({
   post,
   onDelete,
 }: {
-  post: Post;
+  post: IPost;
   onDelete: (postId: string) => void;
 }) {
-  const [votes, setVotes] = useState(post.votes);
+  const { upvotePost, addComment } = usePost();
+  const { user } = useUser();
+  const votes = post.votes;
   const [comments, setComments] = useState(post.comments);
   const [newComment, setNewComment] = useState("");
 
-  const handleUpvote = () => setVotes(votes + 1);
-  const handleDownvote = () => setVotes(votes - 1);
+  const handleUpvote = () => upvotePost(post._id);
   const handleShare = () => {
-    const url = `${window.location.origin}/post/${post.id}`;
+    const url = `${window.location.origin}/post/${post._id}`;
     navigator.clipboard.writeText(url);
     alert("Link copied to clipboard!");
   };
 
   const handleAddComment = () => {
     if (newComment.trim()) {
-      const newCommentObj: Comment = {
-        id: `c${Date.now()}`,
-        content: newComment,
-        author: "currentUser",
+      const newCommentObj: IComment = {
+        _id: `c${Date.now()}`,
+        description: newComment,
         votes: 0,
-        replies: [],
+        user: user,
+        upvotedBy: [],
+        createdAt: new Date(),
+        reply: [],
       };
+      addComment(post._id, newCommentObj);
       setComments([...comments, newCommentObj]);
       setNewComment("");
     }
@@ -195,10 +136,7 @@ function PostCard({
             <Button variant="ghost" size="sm" onClick={handleUpvote}>
               <ArrowUpIcon className="h-4 w-4" />
             </Button>
-            <span>{votes}</span>
-            <Button variant="ghost" size="sm" onClick={handleDownvote}>
-              <ArrowDownIcon className="h-4 w-4" />
-            </Button>
+            <span>{votes}</span>\
           </div>
           <Button variant="ghost" size="sm">
             <MessageSquareIcon className="h-4 w-4 mr-2" />
@@ -207,13 +145,13 @@ function PostCard({
           <Button variant="ghost" size="sm" onClick={handleShare}>
             <ShareIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onDelete(post.id)}>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(post._id)}>
             <TrashIcon className="h-4 w-4" />
           </Button>
         </div>
         <div className="w-full space-y-2">
           {comments.map((comment) => (
-            <CommentCard key={comment.id} comment={comment} />
+            <CommentCard post={post} key={comment._id} comment={comment} />
           ))}
         </div>
         <div className="flex w-full mt-4">
@@ -230,24 +168,26 @@ function PostCard({
   );
 }
 
-function CommentCard({ comment }: { comment: Comment }) {
-  const [votes, setVotes] = useState(comment.votes);
-  const [replies, setReplies] = useState(comment.replies);
+function CommentCard({ post, comment }: { post: IPost; comment: IComment }) {
+  const votes = comment.votes;
+  const [replies, setReplies] = useState(comment.reply);
   const [newReply, setNewReply] = useState("");
   const [showReplyInput, setShowReplyInput] = useState(false);
-
-  const handleUpvote = () => setVotes(votes + 1);
-  const handleDownvote = () => setVotes(votes - 1);
-
+  const { user } = useUser();
+  const handleUpvote = () => upvoteComment(post._id, comment._id);
+  const { upvoteComment, addReply } = usePost();
   const handleAddReply = () => {
     if (newReply.trim()) {
-      const newReplyObj: Comment = {
-        id: `r${Date.now()}`,
-        content: newReply,
-        author: "currentUser",
+      const newReplyObj: IComment = {
+        _id: `r${Date.now()}`,
+        description: newReply,
         votes: 0,
-        replies: [],
+        user: user,
+        upvotedBy: [],
+        createdAt: new Date(),
+        reply: [],
       };
+      addReply(post._id, comment._id, newReplyObj);
       setReplies([...replies, newReplyObj]);
       setNewReply("");
       setShowReplyInput(false);
@@ -257,16 +197,14 @@ function CommentCard({ comment }: { comment: Comment }) {
   return (
     <Card className="w-full">
       <CardContent className="pt-4">
-        <p className="font-semibold">{comment.author}</p>
-        <p>{comment.content}</p>
+        <p className="font-semibold">{comment.user?.username}</p>
+        <p>{comment.description}</p>
         <div className="flex items-center space-x-2 mt-2">
           <Button variant="ghost" size="sm" onClick={handleUpvote}>
             <ArrowUpIcon className="h-4 w-4" />
           </Button>
           <span>{votes}</span>
-          <Button variant="ghost" size="sm" onClick={handleDownvote}>
-            <ArrowDownIcon className="h-4 w-4" />
-          </Button>
+
           <Button
             variant="ghost"
             size="sm"
@@ -288,7 +226,7 @@ function CommentCard({ comment }: { comment: Comment }) {
         )}
         <div className="ml-4 mt-2 space-y-2">
           {replies.map((reply) => (
-            <CommentCard key={reply.id} comment={reply} />
+            <CommentCard post={post} key={reply._id} comment={reply} />
           ))}
         </div>
       </CardContent>
@@ -299,19 +237,22 @@ function CommentCard({ comment }: { comment: Comment }) {
 function CreatePostDialog({
   onCreatePost,
 }: {
-  onCreatePost: (post: Post) => void;
+  onCreatePost: (post: IPost) => void;
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [section, setSection] = useState("Web3");
-
+  const { user } = useUser();
   const handleSubmit = () => {
     if (title.trim() && content.trim()) {
-      const newPost: Post = {
-        id: `p${Date.now()}`,
+      const newPost: IPost = {
+        _id: `p${Date.now()}`,
         title,
         content,
+        user: user,
         votes: 0,
+        upvotedBy: [],
+        createdAt: new Date(),
         comments: [],
         section,
       };

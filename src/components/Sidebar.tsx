@@ -8,7 +8,6 @@ import {
   LogOutIcon,
   SunMoon,
 } from "lucide-react";
-import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";

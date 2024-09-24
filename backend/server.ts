@@ -12,7 +12,7 @@ import Question from "./models/Question";
 import User from "./models/User";
 import { Post } from "./models/Post";
 import { IComment } from "./types";
-
+import { Comment } from "./models/Post";
 dotenv.config();
 
 const app = express();
@@ -32,7 +32,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://inquiso.onrender.com",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
   },
 });
@@ -57,7 +57,7 @@ io.on("connection", async (socket) => {
       return;
     }
     socket.join(roomId);
-    console.log(`User joined room ${roomId}`);
+
     try {
       const questions = await Question.find({ roomId }).sort({ votes: -1 });
       socket.emit("load-questions", questions);
@@ -112,7 +112,7 @@ io.on("connection", async (socket) => {
         socket.emit("Error", "Room not found");
         return;
       }
-      console.log(String(room.admin._id), "===", userId);
+
       if (String(room.admin._id) !== userId) {
         socket.emit("error", "You are not the admin of this room");
         return;
@@ -311,6 +311,7 @@ app.post("/posts", authMiddleware, async (req: Request, res: Response) => {
     await newPost.save();
     res.status(201).json(newPost);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Failed to create post" });
   }
 });
@@ -319,9 +320,32 @@ app.get("/posts/:section", async (req: Request, res: Response) => {
     const sectionParam = req.params.section;
     const posts = await Post.find({ section: sectionParam })
       .populate("user", "username")
-      .populate("comments")
-      .sort({ createdAt: -1 });
-    res.status(200).json(posts);
+      .sort({
+        votes: -1,
+        createdAt: -1,
+      });
+
+    const postsWithComments = await Promise.all(
+      posts.map(async (post) => {
+        const comments = await Comment.find({
+          postId: post._id,
+          parentId: null,
+        }).populate("user", "username");
+
+        const commentsWithReplies = await Promise.all(
+          comments.map(async (comment) => {
+            const replies = await Comment.find({
+              parentId: comment._id,
+            }).populate("user", "username");
+            return { comment, replies };
+          })
+        );
+
+        return { ...post.toObject(), comments: commentsWithReplies };
+      })
+    );
+
+    res.status(200).json(postsWithComments);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch posts" });
   }
@@ -345,7 +369,7 @@ app.delete(
     }
   }
 );
-app.put(
+app.patch(
   "/posts/:id/upvote",
   authMiddleware,
   async (req: Request, res: Response) => {
@@ -372,56 +396,65 @@ app.post(
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-      const { description, file } = req.body;
+      const { description } = req.body;
       const post = await Post.findById(req.params.id);
-
+      const userId = (req as any).user.userId;
       if (!post) return res.status(404).json({ error: "Post not found" });
 
-      const newComment: Partial<IComment> = {
-        user: (req as any).user.userId,
+      const newComment = new Comment({
+        postId: req.params.id,
+        user: userId,
         description,
-        votes: 0,
-        upvotedBy: [],
-        createdAt: new Date(),
-        reply: [],
-      };
+        parentId: null,
+      });
 
-      post.comments.push(newComment as IComment);
+      await newComment.save();
 
-      await post.save();
-
-      res.status(201).json(post);
+      res.status(201).json(newComment);
     } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Failed to add comment" });
     }
   }
 );
+app.get("/posts/:postId/comments", async (req: Request, res: Response) => {
+  try {
+    const comments = await Comment.find({
+      postId: req.params.postId,
+    })
+      .populate("user", "username")
+      .sort({ createdAt: -1 });
+
+    const commentWithReplies = await Promise.all(
+      comments.map(async (comment) => {
+        const replies = await Comment.find({ parentId: comment._id })
+          .populate("user", "username")
+          .sort({ createdAt: -1 });
+        return { comment, replies };
+      })
+    );
+
+    res.status(200).json(commentWithReplies);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch comments" });
+  }
+});
 
 app.delete(
   "/posts/:postId/comments/:commentId",
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-      const post = await Post.findById(req.params.postId);
-      if (!post) return res.status(404).json({ error: "Post not found" });
+      const comment = await Comment.findById(req.params.commentId);
+      if (!comment) return res.status(404).json({ error: "Comment not found" });
 
-      const comments = post.comments as Types.DocumentArray<any>;
-      const commentId = new mongoose.Types.ObjectId(req.params.commentId);
-      const commentIndex = comments.findIndex((comment) =>
-        comment._id.equals(commentId)
-      );
-
-      if (commentIndex === -1)
-        return res.status(404).json({ error: "Comment not found" });
-
-      // Check if the user is authorized to delete the comment
-      if (comments[commentIndex].user.toString() !== (req as any).user.userId) {
+      if (comment.user.toString() !== (req as any).user.userId) {
         return res.status(403).json({ error: "Not authorized" });
       }
-      comments.splice(commentIndex, 1);
-      await post.save();
 
-      res.status(200).json(post);
+      await Comment.deleteOne({ _id: req.params.commentId });
+      res.status(200).json({ message: "Comment deleted" });
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Failed to delete comment" });
@@ -433,13 +466,7 @@ app.put(
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-      const post = await Post.findById(req.params.postId);
-      if (!post) return res.status(404).json({ error: "Post not found" });
-      const comments = post.comments as Types.DocumentArray<any>;
-      console.log(comments);
-      const commentId = new mongoose.Types.ObjectId(req.params.commentId);
-      console.log(commentId);
-      const comment = comments.id(commentId);
+      const comment = await Comment.findById(req.params.commentId);
       if (!comment) return res.status(404).json({ error: "Comment not found" });
 
       if (comment.upvotedBy.includes((req as any).user.userId)) {
@@ -449,9 +476,8 @@ app.put(
       comment.votes += 1;
       comment.upvotedBy.push((req as any).user.userId);
 
-      await post.save();
-
-      res.status(200).json(post);
+      await comment.save();
+      res.status(200).json(comment);
     } catch (error) {
       res.status(500).json({ error: "Failed to upvote comment" });
     }
@@ -463,30 +489,25 @@ app.post(
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-      const { description, file } = req.body;
+      const { description } = req.body;
       const post = await Post.findById(req.params.postId);
       if (!post) return res.status(404).json({ error: "Post not found" });
-      const comments = post.comments as Types.DocumentArray<any>;
+      const userId = (req as any).user.userId;
 
-      const commentId = new mongoose.Types.ObjectId(req.params.commentId);
-      const comment = comments.id(commentId);
-      console.log(comment);
-      if (!comment) {
+      const parentComment = await Comment.findById(req.params.commentId);
+      if (!parentComment)
         return res.status(404).json({ error: "Comment not found" });
-      }
-      const newReply: Partial<IComment> = {
-        user: (req as any).user.userId,
+
+      const newReply = new Comment({
+        postId: req.params.postId,
+        parentId: req.params.commentId,
+        user: userId,
         description,
-        votes: 0,
-        upvotedBy: [],
-        reply: [],
-        createdAt: new Date(),
-      };
+      });
 
-      comment.reply.push(newReply);
-      await post.save();
+      await newReply.save();
 
-      res.status(201).json({ message: "Reply added successfully", comment });
+      res.status(201).json({ message: "Reply added successfully", newReply });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Failed to add reply" });

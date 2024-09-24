@@ -24,13 +24,15 @@ export interface IRoom extends Document {
   admin: mongoose.Schema.Types.ObjectId;
 }
 export interface IComment extends Document {
+  postId: mongoose.Schema.Types.ObjectId;
+  parentId: mongoose.Schema.Types.ObjectId | null;
   user: mongoose.Schema.Types.ObjectId;
   description: string;
   votes: number;
   upvotedBy: string[];
   createdAt: Date;
-  reply: IComment[];
 }
+
 export interface IPost extends Document {
   user: mongoose.Schema.Types.ObjectId;
   content: string;
@@ -39,5 +41,4 @@ export interface IPost extends Document {
   section: Section;
   votes: number;
   upvotedBy: string[];
-  comments: IComment[];
 }

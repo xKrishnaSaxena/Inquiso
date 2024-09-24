@@ -31,12 +31,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserData = async () => {
     if (!token) return;
     try {
-      const response = await axios.get(
-        "https://inquiso-backend.onrender.com/user-profile",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get("http://localhost:3000/user-profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUser(response.data);
       localStorage.setItem("userId", response.data.id);
     } catch (error) {

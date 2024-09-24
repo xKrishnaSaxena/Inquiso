@@ -8,12 +8,13 @@ import {
   LogOutIcon,
   SunMoon,
 } from "lucide-react";
-
+import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function Sidebar() {
+  const { darkMode } = useTheme();
   return (
     <>
       <Sheet>
@@ -22,7 +23,12 @@ export default function Sidebar() {
             <MenuIcon className="h-4 w-4" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[200px] sm:w-[240px]">
+        <SheetContent
+          side="left"
+          className={`w-[200px] sm:w-[240px] ${
+            darkMode ? "dark bg-black text-white" : "bg-white text-black"
+          }`}
+        >
           <SidebarContent />
         </SheetContent>
       </Sheet>
@@ -37,6 +43,7 @@ function SidebarContent() {
   const { token, logout } = useAuth();
   const { darkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
+
   function handleButton() {
     if (token) {
       logout();
@@ -45,27 +52,28 @@ function SidebarContent() {
       navigate("/");
     }
   }
+
   return (
     <div className="py-4">
       <h2 className="mb-4 px-4 text-lg font-semibold">Menu</h2>
       <nav className="space-y-1">
         <a
           onClick={toggleTheme}
-          className=" flex items-center px-4 py-2 text-sm dark:bg-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+          className=" flex items-center px-4 py-2 text-sm dark:bg-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
         >
           <SunMoon className="mr-2 h-4 w-4" />
           {darkMode ? "Light Mode" : "Dark Mode"}
         </a>
         <a
           href="/posts"
-          className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
+          className="flex items-center px-4 py-2 text-sm dark:bg-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
         >
           <HomeIcon className="mr-2 h-4 w-4" />
           Posts
         </a>
         <a
           href="/dashboard"
-          className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
+          className="flex items-center px-4 py-2 text-sm dark:bg-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900"
         >
           <MessageCircleIcon className="mr-2 h-4 w-4" />
           Live Q&A

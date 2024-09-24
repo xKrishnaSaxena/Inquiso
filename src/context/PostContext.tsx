@@ -1,17 +1,14 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import axios from "axios";
 import { IPost, IComment } from "@/types";
-
+import { useAuth } from "./AuthContext";
 interface PostContextType {
   posts: IPost[];
+  comments: IComment[] | null;
+  replies: IComment[] | null;
   fetchPosts: (section: string) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
+  fetchComments: (postId: string) => Promise<void>;
   createPost: (
     content: string,
     title: string,
@@ -26,140 +23,232 @@ interface PostContextType {
     commentId: string,
     replyData: Partial<IComment>
   ) => Promise<void>;
+  loading: boolean;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
 
 export const PostProvider = ({ children }: { children: ReactNode }) => {
+  const { token } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState<IComment[] | null>([]);
+
+  const [replies, setReplies] = useState<IComment[] | null>([]);
   const [posts, setPosts] = useState<IPost[]>([]);
-  useEffect(() => {
-    fetchPosts("web3"); // Replace "defaultSection" with your default section
-  }, []);
+
   const fetchPosts = async (section: string) => {
     try {
-      const response = await axios.get(`/posts/${section}`);
-      setPosts(response.data);
+      setLoading(true);
+      const response = await axios.get(
+        `http://localhost:3000/posts/${section}`
+      );
+
+      const posts = response.data;
+
+      const allComments: IComment[] = [];
+      const allReplies: IComment[] = [];
+
+      posts.forEach((post: IPost) => {
+        post.comments.forEach((comment) => {
+          allComments.push(comment.comment);
+          comment.replies.forEach((reply) => {
+            allReplies.push(reply);
+          });
+        });
+      });
+
+      setPosts(posts);
+      setComments(allComments);
+      setReplies(allReplies);
+      setLoading(false);
     } catch (error) {
       console.error("Failed to fetch posts", error);
+      setLoading(false);
     }
   };
+
   const createPost = async (
     content: string,
     title: string,
     section: string
   ) => {
     try {
-      const response = await axios.post(`/posts`, { content, title, section });
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${token}` };
+      const response = await axios.post(
+        `http://localhost:3000/posts`,
+        {
+          content,
+          title,
+          section,
+        },
+        { headers }
+      );
       setPosts((prevPosts) => [response.data, ...prevPosts]);
+      fetchPosts(section);
+      setLoading(false);
     } catch (error) {
       console.error("Failed to create post", error);
+      setLoading(false);
     }
   };
 
-  // Delete a post
   const deletePost = async (id: string) => {
     try {
-      await axios.delete(`/posts/${id}`);
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.delete(`http://localhost:3000/posts/${id}`, { headers });
       setPosts((prevPosts) => prevPosts.filter((post) => post._id !== id));
+      setLoading(false);
     } catch (error) {
       console.error("Failed to delete post", error);
+      setLoading(false);
     }
   };
 
-  // Upvote a post
   const upvotePost = async (id: string) => {
     try {
-      const response = await axios.put(`/posts/${id}/upvote`);
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const response = await axios.patch(
+        `http://localhost:3000/posts/${id}/upvote`,
+        {},
+        { headers }
+      );
+      console.log(response.data);
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post._id === id ? { ...post, votes: response.data.votes } : post
         )
       );
+      setLoading(false);
     } catch (error) {
       console.error("Failed to upvote post", error);
+      setLoading(false);
     }
   };
 
-  // Add a comment to a post
   const addComment = async (postId: string, commentData: Partial<IComment>) => {
     try {
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `/posts/${postId}/comments`,
-        commentData
+        `http://localhost:3000/posts/${postId}/comments`,
+        commentData,
+        { headers }
       );
+
+      const newComment = response.data;
+
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post._id === postId
-            ? { ...post, comments: response.data.comments }
+            ? {
+                ...post,
+                comments: [
+                  ...post.comments,
+                  { comment: newComment, replies: [] },
+                ],
+              }
             : post
         )
       );
+      setLoading(false);
     } catch (error) {
       console.error("Failed to add comment", error);
+      setLoading(false);
     }
   };
 
-  // Delete a comment from a post
   const deleteComment = async (postId: string, commentId: string) => {
     try {
-      const response = await axios.delete(
-        `/posts/${postId}/comments/${commentId}`
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.delete(
+        `http://localhost:3000/posts/${postId}/comments/${commentId}`,
+        { headers }
       );
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post._id === postId
-            ? { ...post, comments: response.data.comments }
-            : post
-        )
-      );
+      fetchComments(postId);
+      setLoading(false);
     } catch (error) {
       console.error("Failed to delete comment", error);
+      setLoading(false);
     }
   };
 
-  // Upvote a comment on a post
   const upvoteComment = async (postId: string, commentId: string) => {
     try {
-      const response = await axios.put(
-        `/posts/${postId}/comments/${commentId}/upvote`
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.put(
+        `http://localhost:3000/posts/${postId}/comments/${commentId}/upvote`,
+        {},
+        { headers }
       );
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post._id === postId
-            ? { ...post, comments: response.data.comments }
-            : post
-        )
-      );
+      fetchComments(postId);
+      setLoading(false);
     } catch (error) {
       console.error("Failed to upvote comment", error);
+      setLoading(false);
+    }
+  };
+  const fetchComments = async (postId: string) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `http://localhost:3000/posts/${postId}/comments`
+      );
+
+      const commentsData = response.data;
+      const allReplies = commentsData.flatMap(
+        (comment: IComment) => comment.replies
+      );
+
+      setComments(commentsData);
+      setReplies(allReplies);
+      setLoading(false);
+    } catch (error) {
+      console.error("Failed to fetch comments", error);
+      setLoading(false);
     }
   };
 
-  // Add a reply to a comment
   const addReply = async (
     postId: string,
     commentId: string,
     replyData: Partial<IComment>
   ) => {
     try {
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `/posts/${postId}/comments/${commentId}/reply`,
-        replyData
+        `http://localhost:3000/posts/${postId}/comments/${commentId}/reply`,
+        replyData,
+        { headers }
       );
+
+      const newReply = response.data;
+
+      // Update the replies within the comment
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post._id === postId
             ? {
                 ...post,
                 comments: post.comments.map((comment) =>
-                  comment._id === commentId ? response.data.comment : comment
+                  comment.comment._id === commentId
+                    ? { ...comment, replies: [...comment.replies, newReply] }
+                    : comment
                 ),
               }
             : post
         )
       );
+      setLoading(false);
     } catch (error) {
       console.error("Failed to add reply", error);
+      setLoading(false);
     }
   };
 
@@ -167,8 +256,12 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     <PostContext.Provider
       value={{
         posts,
+        comments,
+        replies,
         fetchPosts,
+        loading,
         deletePost,
+        fetchComments,
         createPost,
         upvotePost,
         addComment,
@@ -182,7 +275,6 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook to use the Post context
 export const usePost = (): PostContextType => {
   const context = useContext(PostContext);
   if (!context) {

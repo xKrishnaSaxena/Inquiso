@@ -25,14 +25,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ onSubmit }) => {
     setTimeout(() => {
       setIsDisabled(false);
       localStorage.setItem("isDisabled", "false");
-    }, 30000);
+    }, 10000);
   };
-  useEffect(() => {
-    const storedIsDisabled = localStorage.getItem("isDisabled");
-    if (storedIsDisabled === "true") {
-      setIsDisabled(true);
-    }
-  }, []);
+  useEffect(() => {}, [handleDisabled, isDisabled, setIsDisabled]);
 
   return (
     <div className="mb-6 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-lg transition-all duration-300">
@@ -41,7 +36,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ onSubmit }) => {
         placeholder="Ask your question"
         disabled={isDisabled}
         title={
-          isDisabled ? `Please wait 30 seconds to ask the question again` : ""
+          isDisabled ? `Please wait 10 seconds to ask the question again` : ""
         }
         value={questionText}
         onChange={(e) => setQuestionText(e.target.value)}

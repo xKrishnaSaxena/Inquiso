@@ -7,12 +7,13 @@ enum Section {
 }
 
 const CommentSchema: Schema<IComment> = new Schema({
+  postId: { type: Schema.Types.ObjectId, ref: "Post", required: true },
+  parentId: { type: Schema.Types.ObjectId, ref: "Comment", default: null },
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   description: { type: String, required: true },
   votes: { type: Number, default: 0 },
   upvotedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
   createdAt: { type: Date, default: Date.now },
-  reply: [{ type: Schema.Types.Mixed }],
 });
 
 const PostSchema: Schema<IPost> = new Schema({
@@ -23,7 +24,9 @@ const PostSchema: Schema<IPost> = new Schema({
   votes: { type: Number, default: 0 },
   section: { type: String, enum: Object.values(Section), required: true },
   upvotedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  comments: [{ type: CommentSchema }],
 });
+CommentSchema.index({ postId: 1, parentId: 1 });
+
+export const Comment = mongoose.model<IComment>("Comment", CommentSchema);
 
 export const Post = mongoose.model<IPost>("Post", PostSchema);

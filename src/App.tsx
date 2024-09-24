@@ -5,7 +5,6 @@ import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
 import UserPanel from "./pages/UserPanel";
 import UserLoginForm from "./pages/UserLoginForm";
-import AdminLoginForm from "./pages/AdminLoginForm";
 import UserRegisterForm from "./pages/UserRegisterForm";
 import { ThemeProvider } from "./context/ThemeContext";
 import { Question } from "@/types";
@@ -19,7 +18,7 @@ import Sidebar from "./components/Sidebar";
 import PostPage from "./pages/PostPage";
 
 const token = localStorage.getItem("token");
-const socket: Socket = io("https://inquiso-backend.onrender.com", {
+const socket: Socket = io("http://localhost:3000", {
   transports: ["websocket"],
   auth: {
     token,
@@ -112,16 +111,13 @@ const App: React.FC = () => {
   };
   const handleCloseRoom = async () => {
     try {
-      const response = await fetch(
-        `https://inquiso-backend.onrender.com/room/${roomId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`http://localhost:3000/room/${roomId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.ok) {
         socket.emit("close-room", roomId);
         alert("Room closed successfully.");
@@ -138,17 +134,16 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <div className="flex h-screen">
+      <div className="flex ">
         <Sidebar />
 
-        <div className="flex-1 ">
+        <div className="flex-grow p-8 ">
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/posts" element={<PostPage />} />{" "}
             <Route path="/user-login" element={<UserLoginForm />} />
             <Route path="/user-register" element={<UserRegisterForm />} />
-            <Route path="/admin-login" element={<AdminLoginForm />} />
             <Route path="/room-create" element={<RoomCreation />} />
             <Route path="/join-room" element={<JoinRoom />} />
             <Route

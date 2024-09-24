@@ -9,20 +9,17 @@ import Spinner from "../components/ui/Spinner";
 const UserLoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     try {
       await login(email, password);
       navigate("/dashboard");
     } catch (error) {
       console.error("Login failed", error);
-    } finally {
-      setLoading(false);
     }
   };
 

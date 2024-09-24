@@ -4,11 +4,13 @@ export interface Question {
   userName: string;
   votes: number;
 }
+
 export interface User {
   _id: string;
-  email: string;
+  email?: string;
   username: string;
 }
+
 export interface ThemeContextType {
   darkMode: boolean;
   toggleTheme: () => void;
@@ -16,12 +18,14 @@ export interface ThemeContextType {
 
 export interface IComment {
   _id: string;
+  postId: string;
+  parentId: string | null;
   user: User | null;
   description: string;
   votes: number;
   upvotedBy: string[];
-  reply: IComment[];
   createdAt: Date;
+  replies?: IComment[];
 }
 
 export interface IPost {
@@ -30,8 +34,11 @@ export interface IPost {
   section: string;
   title: string;
   content: string;
-  comments: IComment[];
   votes: number;
   upvotedBy: string[];
   createdAt: Date;
+  comments: {
+    comment: IComment;
+    replies: IComment[];
+  }[];
 }

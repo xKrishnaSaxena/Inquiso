@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowUpIcon,
-  ArrowDownIcon,
   MessageSquareIcon,
   ShareIcon,
   TrashIcon,
@@ -28,12 +27,13 @@ import {
 import { IComment, IPost } from "@/types";
 import { usePost } from "../context/PostContext";
 import { useUser } from "../context/UserContext";
+import Spinner from "@/components/ui/Spinner";
 
-const sections = ["web", "dev", "devops"];
+const sections = ["web3", "dev", "devops"];
 
 export default function PostPage() {
   const { posts, fetchPosts, createPost, deletePost } = usePost();
-  const [selectedSection, setSelectedSection] = useState("Web3");
+  const [selectedSection, setSelectedSection] = useState("web3");
 
   useEffect(() => {
     fetchPosts(selectedSection);
@@ -48,13 +48,13 @@ export default function PostPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Posts</h1>
+        <h1 className="text-4xl font-bold">Posts</h1>
         <CreatePostDialog onCreatePost={handleCreatePost} />
       </div>
       <Tabs
-        defaultValue="Web3"
+        defaultValue="web3"
         className="w-full"
         onValueChange={setSelectedSection}
       >
@@ -67,7 +67,7 @@ export default function PostPage() {
         </TabsList>
         {sections.map((section) => (
           <TabsContent key={section} value={section}>
-            <div className="space-y-4">
+            <div className="space-y-4 mt-6">
               {posts
                 .filter((post) => post.section === section)
                 .map((post) => (
@@ -92,12 +92,14 @@ function PostCard({
   post: IPost;
   onDelete: (postId: string) => void;
 }) {
-  const { upvotePost, addComment } = usePost();
+  const { upvotePost, addComment, loading } = usePost();
+
   const { user } = useUser();
   const votes = post.votes;
-  const [comments, setComments] = useState(post.comments);
-  const [newComment, setNewComment] = useState("");
 
+  const [newComment, setNewComment] = useState("");
+  const createdAt = new Date(post.createdAt);
+  const username = post.user?.username;
   const handleUpvote = () => upvotePost(post._id);
   const handleShare = () => {
     const url = `${window.location.origin}/post/${post._id}`;
@@ -110,37 +112,49 @@ function PostCard({
       const newCommentObj: IComment = {
         _id: `c${Date.now()}`,
         description: newComment,
+        postId: post._id,
+        parentId: null,
         votes: 0,
         user: user,
         upvotedBy: [],
         createdAt: new Date(),
-        reply: [],
       };
       addComment(post._id, newCommentObj);
-      setComments([...comments, newCommentObj]);
       setNewComment("");
     }
   };
 
-  return (
-    <Card className="w-full">
+  return loading ? (
+    <Spinner />
+  ) : (
+    <Card className="w-full ">
       <CardHeader>
-        <CardTitle>{post.title}</CardTitle>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-xl font-semibold ">
+              {post.title}
+            </CardTitle>
+            <span className=" text-sm text-gray-600">
+              {createdAt.toLocaleDateString()} {createdAt.toLocaleTimeString()}
+            </span>
+          </div>
+          <span className="font-medium">Author: {username}</span>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="leading-relaxed">
         <p>{post.content}</p>
       </CardContent>
       <CardFooter className="flex flex-col">
-        <div className="flex justify-between w-full mb-4">
+        <div className="flex justify-between items-center w-full mb-4">
           <div className="flex items-center space-x-2">
             <Button variant="ghost" size="sm" onClick={handleUpvote}>
               <ArrowUpIcon className="h-4 w-4" />
             </Button>
-            <span>{votes}</span>\
+            <span>{votes}</span>
           </div>
           <Button variant="ghost" size="sm">
             <MessageSquareIcon className="h-4 w-4 mr-2" />
-            {comments.length}
+            {post.comments ? <> {post.comments.length}</> : <>0</>}
           </Button>
           <Button variant="ghost" size="sm" onClick={handleShare}>
             <ShareIcon className="h-4 w-4" />
@@ -150,9 +164,15 @@ function PostCard({
           </Button>
         </div>
         <div className="w-full space-y-2">
-          {comments.map((comment) => (
-            <CommentCard post={post} key={comment._id} comment={comment} />
-          ))}
+          {post.comments &&
+            post.comments.map(({ comment, replies }) => (
+              <CommentCard
+                post={post}
+                key={comment._id}
+                comment={comment}
+                replies={replies}
+              />
+            ))}
         </div>
         <div className="flex w-full mt-4">
           <Input
@@ -168,27 +188,37 @@ function PostCard({
   );
 }
 
-function CommentCard({ post, comment }: { post: IPost; comment: IComment }) {
+function CommentCard({
+  comment,
+  replies,
+  post,
+}: {
+  post: IPost;
+  comment: IComment;
+  replies: IComment[];
+}) {
   const votes = comment.votes;
-  const [replies, setReplies] = useState(comment.reply);
   const [newReply, setNewReply] = useState("");
   const [showReplyInput, setShowReplyInput] = useState(false);
   const { user } = useUser();
+  const username = comment.user?.username;
+
+  const createdAt = new Date(comment.createdAt);
   const handleUpvote = () => upvoteComment(post._id, comment._id);
-  const { upvoteComment, addReply } = usePost();
+  const { upvoteComment, addReply, deleteComment } = usePost();
   const handleAddReply = () => {
     if (newReply.trim()) {
       const newReplyObj: IComment = {
         _id: `r${Date.now()}`,
         description: newReply,
+        postId: post._id,
+        parentId: comment._id,
         votes: 0,
         user: user,
         upvotedBy: [],
         createdAt: new Date(),
-        reply: [],
       };
       addReply(post._id, comment._id, newReplyObj);
-      setReplies([...replies, newReplyObj]);
       setNewReply("");
       setShowReplyInput(false);
     }
@@ -197,8 +227,14 @@ function CommentCard({ post, comment }: { post: IPost; comment: IComment }) {
   return (
     <Card className="w-full">
       <CardContent className="pt-4">
-        <p className="font-semibold">{comment.user?.username}</p>
-        <p>{comment.description}</p>
+        <div className="flex justify-between">
+          <p className="font-semibold">{username}</p>
+          <span className="text-gray-600">
+            {createdAt.toLocaleDateString()} {createdAt.toLocaleTimeString()}
+          </span>
+        </div>
+
+        <p className="mt-2">{comment.description}</p>
         <div className="flex items-center space-x-2 mt-2">
           <Button variant="ghost" size="sm" onClick={handleUpvote}>
             <ArrowUpIcon className="h-4 w-4" />
@@ -211,6 +247,13 @@ function CommentCard({ post, comment }: { post: IPost; comment: IComment }) {
             onClick={() => setShowReplyInput(!showReplyInput)}
           >
             Reply
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => deleteComment(post._id, comment._id)}
+          >
+            <TrashIcon className="h-4 w-4" />
           </Button>
         </div>
         {showReplyInput && (
@@ -225,9 +268,54 @@ function CommentCard({ post, comment }: { post: IPost; comment: IComment }) {
           </div>
         )}
         <div className="ml-4 mt-2 space-y-2">
-          {replies.map((reply) => (
-            <CommentCard post={post} key={reply._id} comment={reply} />
-          ))}
+          {replies &&
+            replies.map((reply) => (
+              <CommentReplyCard post={post} key={reply._id} comment={reply} />
+            ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+function CommentReplyCard({
+  comment,
+  post,
+}: {
+  post: IPost;
+  comment: IComment;
+}) {
+  const votes = comment.votes;
+
+  const username = comment.user?.username;
+
+  const createdAt = new Date(comment.createdAt);
+  const handleUpvote = () => upvoteComment(post._id, comment._id);
+  const { upvoteComment, deleteComment } = usePost();
+
+  return (
+    <Card className="w-full">
+      <CardContent className="pt-4">
+        <div className="flex justify-between">
+          <p className="font-semibold">{username}</p>
+          <span className="text-gray-600">
+            {createdAt.toLocaleDateString()} {createdAt.toLocaleTimeString()}
+          </span>
+        </div>
+
+        <p className="mt-2">{comment.description}</p>
+        <div className="flex items-center space-x-2 mt-2">
+          <Button variant="ghost" size="sm" onClick={handleUpvote}>
+            <ArrowUpIcon className="h-4 w-4" />
+          </Button>
+          <span>{votes}</span>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => deleteComment(post._id, comment._id)}
+          >
+            <TrashIcon className="h-4 w-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -241,7 +329,8 @@ function CreatePostDialog({
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [section, setSection] = useState("Web3");
+  const [section, setSection] = useState("web3");
+  const [isOpen, setIsOpen] = useState(false);
   const { user } = useUser();
   const handleSubmit = () => {
     if (title.trim() && content.trim()) {
@@ -253,20 +342,21 @@ function CreatePostDialog({
         votes: 0,
         upvotedBy: [],
         createdAt: new Date(),
-        comments: [],
         section,
+        comments: [],
       };
       onCreatePost(newPost);
       setTitle("");
       setContent("");
-      setSection("Web3");
+      setSection(section);
+      setIsOpen(false);
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button onClick={() => setIsOpen(true)}>
           <PlusIcon className="h-4 w-4 mr-2" />
           Create Post
         </Button>

@@ -16,21 +16,17 @@ const UserRegisterForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+
+  const { register, loading } = useAuth();
   const navigate = useNavigate();
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    setLoading(true);
 
     try {
       await register(email, password, username);
       navigate("/dashboard");
     } catch (error) {
       console.error("Error registering:", error);
-    } finally {
-      setLoading(false);
     }
   };
 

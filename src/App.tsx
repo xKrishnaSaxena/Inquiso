@@ -18,7 +18,7 @@ import Sidebar from "./components/Sidebar";
 import PostPage from "./pages/PostPage";
 
 const token = localStorage.getItem("token");
-const socket: Socket = io("http://localhost:3000", {
+const socket: Socket = io("https://inquiso-backend.onrender.com", {
   transports: ["websocket"],
   auth: {
     token,
@@ -111,13 +111,16 @@ const App: React.FC = () => {
   };
   const handleCloseRoom = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/room/${roomId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `https://inquiso-backend.onrender.com/room/${roomId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (response.ok) {
         socket.emit("close-room", roomId);
         alert("Room closed successfully.");

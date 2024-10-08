@@ -40,7 +40,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:3000/posts/${section}`
+        `https://inquiso-backend.onrender.com/posts/${section}`
       );
 
       const posts = response.data;
@@ -76,7 +76,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `http://localhost:3000/posts`,
+        `https://inquiso-backend.onrender.com/posts`,
         {
           content,
           title,
@@ -97,7 +97,9 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(`http://localhost:3000/posts/${id}`, { headers });
+      await axios.delete(`https://inquiso-backend.onrender.com/posts/${id}`, {
+        headers,
+      });
       setPosts((prevPosts) => prevPosts.filter((post) => post._id !== id));
       setLoading(false);
     } catch (error) {
@@ -112,7 +114,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const response = await axios.patch(
-        `http://localhost:3000/posts/${id}/upvote`,
+        `https://inquiso-backend.onrender.com/posts/${id}/upvote`,
         {},
         { headers }
       );
@@ -134,7 +136,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `http://localhost:3000/posts/${postId}/comments`,
+        `https://inquiso-backend.onrender.com/posts/${postId}/comments`,
         commentData,
         { headers }
       );
@@ -166,7 +168,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       await axios.delete(
-        `http://localhost:3000/posts/${postId}/comments/${commentId}`,
+        `https://inquiso-backend.onrender.com/posts/${postId}/comments/${commentId}`,
         { headers }
       );
       fetchComments(postId);
@@ -182,7 +184,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       await axios.put(
-        `http://localhost:3000/posts/${postId}/comments/${commentId}/upvote`,
+        `https://inquiso-backend.onrender.com/posts/${postId}/comments/${commentId}/upvote`,
         {},
         { headers }
       );
@@ -197,7 +199,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:3000/posts/${postId}/comments`
+        `https://inquiso-backend.onrender.com/posts/${postId}/comments`
       );
 
       const commentsData = response.data;
@@ -223,7 +225,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `http://localhost:3000/posts/${postId}/comments/${commentId}/reply`,
+        `https://inquiso-backend.onrender.com/posts/${postId}/comments/${commentId}/reply`,
         replyData,
         { headers }
       );

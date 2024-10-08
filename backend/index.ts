@@ -32,7 +32,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "https://inquiso.onrender.com",
     methods: ["GET", "POST"],
   },
 });
@@ -167,6 +167,10 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+
+app.get("/", (req, res) => {
+  res.send("Hello from Express and WebSocket Server!");
+});
 
 //ROUTES
 app.post("/register", async (req: Request, res: Response) => {

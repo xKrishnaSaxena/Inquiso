@@ -18,12 +18,15 @@ import Sidebar from "./components/Sidebar";
 import PostPage from "./pages/PostPage";
 
 const token = localStorage.getItem("token");
-const socket: Socket = io("https://inquiso-backend.onrender.com", {
-  transports: ["websocket"],
-  auth: {
-    token,
-  },
-});
+const socket: Socket = io(
+  "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000",
+  {
+    transports: ["websocket"],
+    auth: {
+      token,
+    },
+  }
+);
 
 const App: React.FC = () => {
   const { user } = useUser();
@@ -112,7 +115,7 @@ const App: React.FC = () => {
   const handleCloseRoom = async () => {
     try {
       const response = await fetch(
-        `https://inquiso-backend.onrender.com/room/${roomId}`,
+        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/room/${roomId}`,
         {
           method: "DELETE",
           headers: {

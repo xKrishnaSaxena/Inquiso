@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
+import { useEffect } from "react";
 
 export default function Sidebar() {
   const { darkMode } = useTheme();
@@ -51,6 +52,7 @@ function SidebarContent() {
       navigate("/");
     }
   }
+  useEffect(() => {}, [token, logout]);
 
   return (
     <div className="py-4">

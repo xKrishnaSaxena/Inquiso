@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { Server } from "socket.io";
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import http from "http";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -11,12 +11,11 @@ import Room from "./models/Room";
 import Question from "./models/Question";
 import User from "./models/User";
 import { Post } from "./models/Post";
-import { IComment } from "./types";
 import { Comment } from "./models/Post";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5001;
 const mongoUri = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {

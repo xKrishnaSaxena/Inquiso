@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const response = await axios.post(
-        "https://inquiso-backend.onrender.com/register",
+        "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/register",
         {
           email,
           password,
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const response = await axios.post(
-        "https://inquiso-backend.onrender.com/login",
+        "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/login",
         {
           email,
           password,

@@ -32,7 +32,7 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://inquiso-backend.onrender.com/create-room",
+        "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/create-room",
         {
           password,
         },
@@ -66,7 +66,7 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://inquiso-backend.onrender.com/join-room",
+        "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/join-room",
         {
           roomId: roomIdbyUser,
           password,

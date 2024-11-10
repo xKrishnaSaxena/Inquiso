@@ -5,8 +5,8 @@ export default function Spinner() {
 
   return (
     <div
-      className={`bg flex items-center justify-center min-h-screen ${
-        darkMode ? "bg-black" : "bg-white"
+      className={`flex items-center justify-center ${
+        darkMode ? "bg-black bg-opacity-50" : "bg-white bg-opacity-50"
       }`}
     >
       <div

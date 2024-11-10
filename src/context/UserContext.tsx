@@ -27,12 +27,16 @@ export const useUser = () => {
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { token } = useAuth();
   const [user, setUser] = useState<User | null>(null);
-
+  useEffect(() => {
+    if (token) {
+      fetchUserData();
+    }
+  }, [token]);
   const fetchUserData = async () => {
     if (!token) return;
     try {
       const response = await axios.get(
-        "https://inquiso-backend.onrender.com/user-profile",
+        "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/user-profile",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -43,12 +47,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error fetching user data:", error);
     }
   };
-
-  useEffect(() => {
-    if (token) {
-      fetchUserData();
-    }
-  }, [token]);
 
   const value = {
     user,

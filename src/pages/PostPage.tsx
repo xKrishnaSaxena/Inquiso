@@ -33,6 +33,7 @@ const sections = ["web3", "dev", "devops"];
 
 export default function PostPage() {
   const { posts, fetchPosts, createPost, deletePost } = usePost();
+  const { user } = useUser();
   const [selectedSection, setSelectedSection] = useState("web3");
 
   useEffect(() => {
@@ -48,39 +49,41 @@ export default function PostPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Posts</h1>
-        <CreatePostDialog onCreatePost={handleCreatePost} />
-      </div>
-      <Tabs
-        defaultValue="web3"
-        className="w-full"
-        onValueChange={setSelectedSection}
-      >
-        <TabsList className="grid w-full grid-cols-3">
+    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 transition-all duration-300">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold">Posts</h1>
+          {user && <CreatePostDialog onCreatePost={handleCreatePost} />}
+        </div>
+        <Tabs
+          defaultValue="web3"
+          className="w-full"
+          onValueChange={setSelectedSection}
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            {sections.map((section) => (
+              <TabsTrigger key={section} value={section}>
+                {section}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {sections.map((section) => (
-            <TabsTrigger key={section} value={section}>
-              {section}
-            </TabsTrigger>
+            <TabsContent key={section} value={section}>
+              <div className="space-y-4 mt-6">
+                {posts
+                  .filter((post) => post.section === section)
+                  .map((post) => (
+                    <PostCard
+                      key={post._id}
+                      post={post}
+                      onDelete={handleDeletePost}
+                    />
+                  ))}
+              </div>
+            </TabsContent>
           ))}
-        </TabsList>
-        {sections.map((section) => (
-          <TabsContent key={section} value={section}>
-            <div className="space-y-4 mt-6">
-              {posts
-                .filter((post) => post.section === section)
-                .map((post) => (
-                  <PostCard
-                    key={post._id}
-                    post={post}
-                    onDelete={handleDeletePost}
-                  />
-                ))}
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 }

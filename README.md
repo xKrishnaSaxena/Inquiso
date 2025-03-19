@@ -1,50 +1,48 @@
-# React + TypeScript + Vite
+# Inquiso - Real-Time Tech Collaboration Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Inquiso is a modern collaboration platform combining tech discussions with real-time Q&A capabilities. Built for developers, DevOps engineers, and Web3 enthusiasts to share knowledge and collaborate seamlessly. 💻🌐
 
-Currently, two official plugins are available:
+## 🎯 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🗂️ Forum Features
+- 📂 Categorized posts (dev/devops/web3)
+- ⬆️ Reddit-style voting system
+- 💬 Thread discussions
+- 🔐 User authentication system
+- 🎨 Responsive UI with dark/light modes
 
-## Expanding the ESLint configuration
+### 💡 Q&A Features
+- ⚡ Real-time question management
+- 🛠️ Admin moderation tools
+- 🔼 Live upvoting system
+- 📡 WebSocket-based communication
+- ➕ Instant question submission
+- ✨ Interactive participant interface
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## ⚙️ Tech Stack
 
-- Configure the top-level `parserOptions` property like this:
+**🎨 Frontend:**
+- 🟦 TypeScript (91.4%)
+- ⚛️ React 18 + React Router 6
+- 🎨 Tailwind CSS with Animate.css
+- 🧩 Shadcn UI Component Library
+- 🔗 Socket.io Client
+- 🌊 Framer Motion animations
+- 🧱 Radix UI Primitives
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+**🔧 Backend:**
+- 🖥️ Node.js + Express
+- 🗄️ MongoDB + Mongoose
+- 📶 WebSockets (ws + Socket.io)
+- 🔑 JWT Authentication
+- 🛡️ Bcrypt password hashing
+- 🛠️ Axios HTTP client
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## ☁️ Deployment
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+**Backend Deployment (Docker + AWS):**  
+- 🐳 Containerized using Docker with Node.js 23.1.0 base image  
+- ☁️ Hosted on AWS Elastic Container Service (ECS)  
+- 🔒 Secured with AWS VPC & IAM roles  
+- 📦 Container registry: Amazon ECR (Elastic Container Registry)  
+- ⚖️ Load balanced with AWS Application Load Balancer  

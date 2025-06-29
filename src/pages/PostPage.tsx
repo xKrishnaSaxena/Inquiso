@@ -26,14 +26,14 @@ import {
 } from "lucide-react";
 import { IComment, IPost } from "@/types";
 import { usePost } from "../context/PostContext";
-import { useUser } from "../context/UserContext";
 import Spinner from "@/components/ui/Spinner";
+import { useAuth } from "@/context/AuthContext";
 
 const sections = ["web3", "dev", "devops"];
 
 export default function PostPage() {
   const { posts, fetchPosts, createPost, deletePost } = usePost();
-  const { user } = useUser();
+  const { user, loading } = useAuth();
   const [selectedSection, setSelectedSection] = useState("web3");
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function PostPage() {
   const handleDeletePost = async (postId: string) => {
     await deletePost(postId);
   };
-
+  if (loading) return <Spinner />;
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 transition-all duration-300">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -97,7 +97,7 @@ function PostCard({
 }) {
   const { upvotePost, addComment, loading } = usePost();
 
-  const { user } = useUser();
+  const { user } = useAuth();
   const votes = post.votes;
 
   const [newComment, setNewComment] = useState("");
@@ -203,12 +203,12 @@ function CommentCard({
   const votes = comment.votes;
   const [newReply, setNewReply] = useState("");
   const [showReplyInput, setShowReplyInput] = useState(false);
-  const { user } = useUser();
+  const { user, loading: authLoading } = useAuth();
   const username = comment.user?.username;
 
   const createdAt = new Date(comment.createdAt);
   const handleUpvote = () => upvoteComment(post._id, comment._id);
-  const { upvoteComment, addReply, deleteComment } = usePost();
+  const { upvoteComment, addReply, deleteComment, loading } = usePost();
   const handleAddReply = () => {
     if (newReply.trim()) {
       const newReplyObj: IComment = {
@@ -226,7 +226,7 @@ function CommentCard({
       setShowReplyInput(false);
     }
   };
-
+  if (loading || authLoading) return <Spinner />;
   return (
     <Card className="w-full">
       <CardContent className="pt-4">
@@ -288,13 +288,13 @@ function CommentReplyCard({
   comment: IComment;
 }) {
   const votes = comment.votes;
-
+  const { loading: authLoading } = useAuth();
   const username = comment.user?.username;
-
+  const { loading } = usePost();
   const createdAt = new Date(comment.createdAt);
   const handleUpvote = () => upvoteComment(post._id, comment._id);
   const { upvoteComment, deleteComment } = usePost();
-
+  if (loading || authLoading) return <Spinner />;
   return (
     <Card className="w-full">
       <CardContent className="pt-4">
@@ -334,7 +334,7 @@ function CreatePostDialog({
   const [content, setContent] = useState("");
   const [section, setSection] = useState("web3");
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useUser();
+  const { user, loading } = useAuth();
   const handleSubmit = () => {
     if (title.trim() && content.trim()) {
       const newPost: IPost = {
@@ -355,6 +355,7 @@ function CreatePostDialog({
       setIsOpen(false);
     }
   };
+  if (loading) return <Spinner />;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

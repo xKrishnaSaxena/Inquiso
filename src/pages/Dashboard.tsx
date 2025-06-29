@@ -1,11 +1,12 @@
-import { useUser } from "@/context/UserContext";
+import Spinner from "@/components/ui/Spinner";
+import { useAuth } from "@/context/AuthContext";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
-
+  const { user, loading } = useAuth();
+  if (loading) return <Spinner />;
   useEffect(() => {}, [user, navigate]);
   if (!user) {
     return (

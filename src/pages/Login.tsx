@@ -1,10 +1,10 @@
-import { useUser } from "@/context/UserContext";
+import { useAuth } from "@/context/AuthContext";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (user) {

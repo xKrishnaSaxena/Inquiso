@@ -1,5 +1,11 @@
 import axios from "axios";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { useAuth } from "./AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -24,6 +30,12 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({
   const [roomId, setRoomId] = useState<string | null>(
     localStorage.getItem("roomId")
   );
+  useEffect(() => {
+    if (roomId) {
+      localStorage.setItem("roomId", roomId);
+    }
+  }, [roomId]);
+
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -32,7 +44,7 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/create-room",
+        "http://localhost:3000/create-room",
         {
           password,
         },
@@ -66,7 +78,7 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/join-room",
+        "http://localhost:3000/join-room",
         {
           roomId: roomIdbyUser,
           password,

@@ -29,7 +29,7 @@ interface PostContextType {
 const PostContext = createContext<PostContextType | undefined>(undefined);
 
 export const PostProvider = ({ children }: { children: ReactNode }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState<IComment[] | null>([]);
 
@@ -40,7 +40,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${section}`
+        `http://localhost:3000/posts/${section}`
       );
 
       const posts = response.data;
@@ -76,7 +76,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts`,
+        `http://localhost:3000/posts`,
         {
           content,
           title,
@@ -97,12 +97,9 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${id}`,
-        {
-          headers,
-        }
-      );
+      await axios.delete(`http://localhost:3000/posts/${id}`, {
+        headers,
+      });
       setPosts((prevPosts) => prevPosts.filter((post) => post._id !== id));
       setLoading(false);
     } catch (error) {
@@ -117,7 +114,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const response = await axios.patch(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${id}/upvote`,
+        `http://localhost:3000/posts/${id}/upvote`,
         {},
         { headers }
       );
@@ -139,13 +136,13 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${postId}/comments`,
+        `http://localhost:3000/posts/${postId}/comments`,
         commentData,
         { headers }
       );
 
       const newComment = response.data;
-
+      const fullNewComment = { ...newComment, user: user };
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post._id === postId
@@ -153,7 +150,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
                 ...post,
                 comments: [
                   ...post.comments,
-                  { comment: newComment, replies: [] },
+                  { comment: fullNewComment, replies: [] },
                 ],
               }
             : post
@@ -171,7 +168,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       await axios.delete(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${postId}/comments/${commentId}`,
+        `http://localhost:3000/posts/${postId}/comments/${commentId}`,
         { headers }
       );
       fetchComments(postId);
@@ -187,7 +184,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       await axios.put(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${postId}/comments/${commentId}/upvote`,
+        `http://localhost:3000/posts/${postId}/comments/${commentId}/upvote`,
         {},
         { headers }
       );
@@ -202,7 +199,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${postId}/comments`
+        `http://localhost:3000/posts/${postId}/comments`
       );
 
       const commentsData = response.data;
@@ -228,13 +225,13 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `http://ec2-15-206-89-86.ap-south-1.compute.amazonaws.com:3000/posts/${postId}/comments/${commentId}/reply`,
+        `http://localhost:3000/posts/${postId}/comments/${commentId}/reply`,
         replyData,
         { headers }
       );
 
       const newReply = response.data;
-
+      const fullNewReply = { ...newReply, user: user };
       // Update the replies within the comment
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
@@ -243,7 +240,10 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
                 ...post,
                 comments: post.comments.map((comment) =>
                   comment.comment._id === commentId
-                    ? { ...comment, replies: [...comment.replies, newReply] }
+                    ? {
+                        ...comment,
+                        replies: [...comment.replies, fullNewReply],
+                      }
                     : comment
                 ),
               }

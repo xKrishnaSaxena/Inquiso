@@ -31,7 +31,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://inquiso.onrender.com",
+    origin: ["https://inquiso.onrender.com", "http://localhost:5173"],
     methods: ["GET", "POST"],
   },
 });
